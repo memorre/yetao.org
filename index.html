@@ -2,95 +2,498 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>叶涛 Tao Ye</title>
 <meta name="description" content="叶涛 Tao Ye — 悉尼大学计算机科学硕士（数据科学与人工智能），用 Claude Code / Codex 做 AI 应用。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<script>
+  // Pick the language before first paint: ?lang= in the URL, then the saved choice, then the browser language.
+  (function () {
+    function norm(v) {
+      v = String(v || "").toLowerCase();
+      return v.indexOf("zh") === 0 ? "zh-CN" : v.indexOf("en") === 0 ? "en" : null;
+    }
+    var lang = null;
+    try { lang = norm(new URLSearchParams(location.search).get("lang")); } catch (e) {}
+    if (!lang) { try { lang = norm(localStorage.getItem("lang")); } catch (e) {} }
+    if (!lang) { lang = norm(navigator.language) || "en"; }
+    document.documentElement.lang = lang;
+  })();
+</script>
 <style>
   :root {
-    --bg: #fafaf9; --fg: #1c1917; --muted: #78716c; --line: #e7e5e4;
-    --card: #ffffff; --accent: #0f766e;
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --bg-alt: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --line: #d2d2d7;
+    --link: #0066cc;
+    --button: #0071e3;
+    --button-hover: #0077ed;
+    --tag-bg: #f5f5f7;
+    --nav-bg: rgba(255, 255, 255, .72);
+    --nav-line: rgba(0, 0, 0, .08);
+    --seg-bg: rgba(118, 118, 128, .12);
+    --seg-thumb: #ffffff;
+    --card-shadow: 0 2px 12px rgba(0, 0, 0, .04);
+    --card-shadow-hover: 0 16px 40px rgba(0, 0, 0, .10);
+    --gradient: linear-gradient(90deg, #0071e3 0%, #7d4cdb 50%, #e0457b 100%);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI",
+            "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+    --ease: cubic-bezier(.2, .7, .2, 1);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0c0a09; --fg: #f5f5f4; --muted: #a8a29e; --line: #292524; --card: #1c1917; --accent: #5eead4; }
+    :root {
+      --bg: #000000;
+      --bg-alt: #0b0b0c;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --text-2: #a1a1a6;
+      --line: #424245;
+      --link: #2997ff;
+      --tag-bg: #2c2c2e;
+      --nav-bg: rgba(22, 22, 23, .72);
+      --nav-line: rgba(255, 255, 255, .08);
+      --seg-bg: rgba(118, 118, 128, .24);
+      --seg-thumb: #636366;
+      --card-shadow: none;
+      --card-shadow-hover: 0 16px 40px rgba(0, 0, 0, .6);
+      --gradient: linear-gradient(90deg, #2997ff 0%, #bf5af2 50%, #ff375f 100%);
+    }
   }
+
+  /* Bilingual content: every translated string appears twice, once with lang="zh-CN" and once with
+     lang="en". Only the one matching <html lang> is shown, so don't put a lang attribute on anything
+     that should stay visible in both languages. */
+  html[lang="en"] [lang="zh-CN"],
+  html[lang="zh-CN"] [lang="en"] { display: none !important; }
+
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 48px; -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font: 16px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.47059 var(--font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
-  main { max-width: 720px; margin: 0 auto; padding: 72px 24px 56px; }
-  h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .en { color: var(--muted); font-weight: 400; }
-  .lead { margin: 12px 0 0; color: var(--muted); }
-  h2 {
-    font-size: .8rem; text-transform: uppercase; letter-spacing: .12em;
-    color: var(--muted); margin: 48px 0 16px; font-weight: 600;
-  }
-  .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-    padding: 20px 22px; margin-bottom: 14px;
-  }
-  .card h3 { margin: 0; font-size: 1.1rem; }
-  .card p { margin: 8px 0 12px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .tags span {
-    font-size: .78rem; color: var(--muted); border: 1px solid var(--line);
-    border-radius: 999px; padding: 1px 10px;
-  }
-  a { color: var(--accent); text-decoration: none; }
+  html[lang="en"] body { letter-spacing: -.022em; }
+  a { color: var(--link); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .links a { margin-right: 18px; font-size: .95rem; }
-  ul.plain { list-style: none; padding: 0; margin: 0; }
-  ul.plain li { padding: 6px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; }
-  ul.plain li:last-child { border-bottom: none; }
-  .when { color: var(--muted); white-space: nowrap; font-size: .9rem; }
-  footer { margin-top: 56px; color: var(--muted); font-size: .85rem; }
+  :focus-visible { outline: 2px solid var(--button); outline-offset: 3px; border-radius: 6px; }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-left: max(22px, env(safe-area-inset-left));
+    padding-right: max(22px, env(safe-area-inset-right));
+  }
+
+  /* ---------- Navigation ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 10;
+    height: 48px;
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--nav-line);
+  }
+  .nav .wrap { height: 100%; display: flex; align-items: center; gap: 28px; }
+  .brand { margin-right: auto; color: var(--text); font-size: 17px; font-weight: 600; }
+  .brand:hover { text-decoration: none; }
+  .nav-links { display: flex; gap: 28px; font-size: 13px; }
+  .nav-links a { color: var(--text); opacity: .8; transition: opacity .2s; }
+  .nav-links a:hover { opacity: 1; text-decoration: none; }
+
+  .lang-switch {
+    position: relative;
+    display: inline-grid; grid-template-columns: 1fr 1fr;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--seg-bg);
+  }
+  .lang-switch::before {
+    content: "";
+    position: absolute; top: 2px; bottom: 2px; left: 2px;
+    width: calc(50% - 2px);
+    border-radius: 999px;
+    background: var(--seg-thumb);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04);
+    transition: transform .35s var(--ease);
+  }
+  html[lang="en"] .lang-switch::before { transform: translateX(100%); }
+  .lang-switch button {
+    position: relative; z-index: 1;
+    min-width: 36px;
+    padding: 4px 10px;
+    border: 0; border-radius: 999px;
+    background: none;
+    color: var(--text-2);
+    font: 500 12px/1.4 var(--font);
+    letter-spacing: 0;
+    cursor: pointer;
+    transition: color .2s;
+  }
+  .lang-switch button[aria-pressed="true"] { color: var(--text); }
+  .lang-switch button:focus-visible { outline-offset: 1px; border-radius: 999px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: clamp(88px, 16vh, 168px) 0 clamp(88px, 14vh, 144px);
+    text-align: center;
+  }
+  .eyebrow { margin: 0 0 12px; color: var(--text-2); font-size: clamp(17px, 2vw, 21px); font-weight: 600; }
+  .hero h1 {
+    margin: 0;
+    font-size: clamp(56px, 11vw, 112px);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -.015em;
+  }
+  .tagline {
+    margin: 16px auto 0;
+    font-size: clamp(28px, 4.6vw, 48px);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -.005em;
+    text-wrap: balance;
+  }
+  /* Chinese headlines only break at punctuation, never in the middle of a phrase. */
+  .tagline, .section-title { word-break: keep-all; overflow-wrap: break-word; }
+  .tagline span {
+    background: var(--gradient);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .lead {
+    max-width: 640px;
+    margin: 24px auto 0;
+    color: var(--text-2);
+    font-size: clamp(17px, 2vw, 21px);
+    line-height: 1.5;
+    text-wrap: balance;
+  }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px 32px; margin-top: 36px; }
+
+  .hero .wrap > * { animation: rise 1s var(--ease) both; }
+  .hero .wrap > :nth-child(2) { animation-delay: .06s; }
+  .hero .wrap > :nth-child(3) { animation-delay: .12s; }
+  .hero .wrap > :nth-child(4) { animation-delay: .18s; }
+  .hero .wrap > :nth-child(5) { animation-delay: .24s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } }
+
+  /* ---------- Buttons & links ---------- */
+  .btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 980px;
+    background: var(--button);
+    color: #fff;
+    font-size: 17px;
+    line-height: 1.2;
+    transition: background-color .2s, color .2s;
+  }
+  .btn:hover { background: var(--button-hover); text-decoration: none; }
+  .btn-ghost { background: transparent; color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+  .btn-ghost:hover { background: var(--link); color: #fff; }
+
+  .more { font-size: 17px; }
+  .more::after {
+    content: "";
+    display: inline-block;
+    width: .4em; height: .4em;
+    margin-left: .35em;
+    border-top: 1.6px solid currentColor;
+    border-right: 1.6px solid currentColor;
+    transform: translateY(-.1em) rotate(45deg);
+  }
+
+  /* ---------- Sections ---------- */
+  .section { padding: clamp(80px, 12vw, 128px) 0; }
+  .section.alt { background: var(--bg-alt); }
+  .section-title {
+    margin: 0 0 clamp(32px, 5vw, 56px);
+    font-size: clamp(32px, 5.2vw, 56px);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -.005em;
+    text-wrap: balance;
+  }
+  .section-title .dim { color: var(--text-2); }
+
+  /* Projects */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; }
+  .card {
+    display: flex; flex-direction: column;
+    padding: clamp(28px, 4vw, 40px);
+    border-radius: 28px;
+    background: var(--card);
+    box-shadow: var(--card-shadow);
+    transition: transform .5s var(--ease), box-shadow .5s var(--ease);
+  }
+  @media (hover: hover) {
+    .card:hover { transform: scale(1.015); box-shadow: var(--card-shadow-hover); }
+  }
+  .app-icon {
+    display: grid; place-items: center;
+    width: 60px; height: 60px;
+    margin-bottom: 28px;
+    border-radius: 14px;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, .25);
+  }
+  .app-icon svg { width: 30px; height: 30px; }
+  .app-icon.cite { background: linear-gradient(145deg, #5ac8fa 0%, #0071e3 100%); }
+  .app-icon.snip { background: linear-gradient(145deg, #ffb340 0%, #ff2d55 100%); }
+  .card-eyebrow { margin: 0; color: var(--text-2); font-size: 14px; font-weight: 600; letter-spacing: 0; }
+  .card h3 { margin: 4px 0 0; font-size: clamp(32px, 4vw, 40px); font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+  .card-text { margin: 14px 0 0; text-wrap: pretty; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; }
+  .tags li {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--tag-bg);
+    color: var(--text-2);
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+  .card-links { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: auto; padding-top: 28px; }
+
+  /* Experience */
+  .jobs { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+  .jobs li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 4px 24px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .org { font-size: 21px; font-weight: 600; line-height: 1.3; }
+  .role { grid-column: 1; color: var(--text-2); }
+  .when { grid-column: 2; grid-row: 1; color: var(--text-2); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* Contact */
+  .contact { text-align: center; }
+  .contact .section-title { margin-bottom: 16px; }
+  .contact .lead { margin-top: 0; }
+  .contact-meta { margin: 28px 0 0; color: var(--text-2); font-size: 14px; letter-spacing: 0; }
+
+  .footer { background: var(--bg-alt); color: var(--text-2); font-size: 12px; letter-spacing: 0; }
+  .footer .wrap > p { margin: 0; padding: 18px 0 max(18px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+
+  /* Scroll reveal, switched on by the script below so the page never stays hidden without JS. */
+  .reveal { transition: opacity 1s var(--ease), transform 1s var(--ease); transition-delay: calc(var(--i, 0) * 90ms); }
+  .reveal-ready .reveal:not(.in) { opacity: 0; transform: translateY(40px); }
+
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .jobs li { grid-template-columns: 1fr; }
+    .when { grid-column: 1; grid-row: auto; margin-top: 2px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>叶涛 <span class="en">Tao Ye</span></h1>
-  <p class="lead">
-    悉尼大学计算机科学硕士（数据科学与人工智能方向），2026 年 11 月毕业。<br>
-    日常用 Claude Code、Codex 把想法做成能运行的产品，也做过大模型应用的效果评估与问题归因。
-  </p>
 
-  <h2>项目 Projects</h2>
-
-  <div class="card">
-    <h3>Cite — 文档问答助手</h3>
-    <p>上传 PDF，用自然语言提问，回答只依据原文，并标出引用的段落和页码。</p>
-    <div class="tags"><span>RAG</span><span>LangChain.js</span><span>pgvector</span><span>Next.js</span><span>Vercel</span></div>
-    <div class="links">
-      <a href="https://cite.yetao.org">在线试用 →</a>
-      <a href="https://github.com/memorre/cite">GitHub</a>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span></a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#projects"><span lang="zh-CN">项目</span><span lang="en">Projects</span></a>
+      <a href="#experience"><span lang="zh-CN">经历</span><span lang="en">Experience</span></a>
+      <a href="#contact"><span lang="zh-CN">联系</span><span lang="en">Contact</span></a>
+    </nav>
+    <div class="lang-switch" role="group" aria-label="语言 / Language">
+      <button type="button" data-set-lang="zh-CN" aria-pressed="true">中</button>
+      <button type="button" data-set-lang="en" aria-pressed="false">EN</button>
     </div>
   </div>
+</header>
 
-  <div class="card">
-    <h3>Snip — 带实时分析的短链平台</h3>
-    <p>短链接 + 点击分析：日趋势、来源渠道、设备与浏览器、地域分布，以及点击发生即刷新的实时点击流。</p>
-    <div class="tags"><span>Next.js</span><span>TypeScript</span><span>Postgres</span><span>Recharts</span></div>
-    <div class="links">
-      <a href="https://github.com/memorre/snip">GitHub</a>
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">
+        <span lang="zh-CN">悉尼大学 · 计算机科学硕士</span>
+        <span lang="en">The University of Sydney · Master of Computer Science</span>
+      </p>
+      <h1><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span></h1>
+      <p class="tagline">
+        <span lang="zh-CN">把想法，做成能运行的产品。</span>
+        <span lang="en">Turning ideas into products that actually run.</span>
+      </p>
+      <p class="lead">
+        <span lang="zh-CN">数据科学与人工智能方向，2026 年 11 月毕业。日常用 Claude&nbsp;Code、Codex 做 AI 应用，也做过大模型应用的效果评估与问题归因。</span>
+        <span lang="en">Data Science &amp; AI track, graduating November 2026. I build AI applications with Claude&nbsp;Code and Codex, and have evaluated LLM applications and traced their failures to root causes.</span>
+      </p>
+      <div class="actions">
+        <a class="btn" href="#projects"><span lang="zh-CN">查看项目</span><span lang="en">View projects</span></a>
+        <a class="more" href="#contact"><span lang="zh-CN">联系我</span><span lang="en">Get in touch</span></a>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <h2>经历 Experience</h2>
-  <ul class="plain">
-    <li><span>德勤 Deloitte · AI 产品经理实习生</span><span class="when">2026.01 – 2026.05</span></li>
-    <li><span>Family Fresh Farms（悉尼）· AI 咨询实习生</span><span class="when">2025.07</span></li>
-    <li><span>普华永道商务咨询 · 数据实习生</span><span class="when">2023.02 – 2023.04</span></li>
-    <li><span>尼尔森 Nielsen · 零售研究实习生</span><span class="when">2022.07 – 2022.09</span></li>
-  </ul>
+  <section class="section alt" id="projects">
+    <div class="wrap">
+      <h2 class="section-title reveal">
+        <span lang="zh-CN">项目。<span class="dim">亲手做的几样东西。</span></span>
+        <span lang="en">Projects. <span class="dim">A few things I’ve built.</span></span>
+      </h2>
+      <div class="cards">
+        <article class="card reveal">
+          <div class="app-icon cite" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 3v5h5M9 13h6M9 17h4"/>
+            </svg>
+          </div>
+          <p class="card-eyebrow"><span lang="zh-CN">文档问答助手</span><span lang="en">Document Q&amp;A assistant</span></p>
+          <h3>Cite</h3>
+          <p class="card-text">
+            <span lang="zh-CN">上传 PDF，用自然语言提问，回答只依据原文，并标出引用的段落和页码。</span>
+            <span lang="en">Upload a PDF and ask questions in plain language. Answers come only from the source text, with the cited passages and page numbers marked.</span>
+          </p>
+          <ul class="tags"><li>RAG</li><li>LangChain.js</li><li>pgvector</li><li>Next.js</li><li>Vercel</li></ul>
+          <div class="card-links">
+            <a class="more" href="https://cite.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span></a>
+            <a class="more" href="https://github.com/memorre/cite">GitHub</a>
+          </div>
+        </article>
 
-  <h2>联系 Contact</h2>
-  <div class="links">
-    <a href="mailto:15210055017@163.com">15210055017@163.com</a>
-    <a href="https://github.com/memorre">github.com/memorre</a>
-  </div>
+        <article class="card reveal" style="--i: 1">
+          <div class="app-icon snip" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <p class="card-eyebrow"><span lang="zh-CN">带实时分析的短链平台</span><span lang="en">Link shortener with live analytics</span></p>
+          <h3>Snip</h3>
+          <p class="card-text">
+            <span lang="zh-CN">短链接 + 点击分析：日趋势、来源渠道、设备与浏览器、地域分布，以及点击发生即刷新的实时点击流。</span>
+            <span lang="en">Short links plus click analytics: daily trends, referrers, devices and browsers, locations, and a live click stream that updates the moment a click happens.</span>
+          </p>
+          <ul class="tags"><li>Next.js</li><li>TypeScript</li><li>Postgres</li><li>Recharts</li></ul>
+          <div class="card-links">
+            <a class="more" href="https://github.com/memorre/snip">GitHub</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
 
-  <footer>© 2026 Tao Ye</footer>
+  <section class="section" id="experience">
+    <div class="wrap">
+      <h2 class="section-title reveal">
+        <span lang="zh-CN">经历。<span class="dim">我工作过的地方。</span></span>
+        <span lang="en">Experience. <span class="dim">Where I’ve worked.</span></span>
+      </h2>
+      <ul class="jobs reveal">
+        <li>
+          <span class="org"><span lang="zh-CN">德勤 Deloitte</span><span lang="en">Deloitte</span></span>
+          <span class="role"><span lang="zh-CN">AI 产品经理实习生</span><span lang="en">AI Product Manager Intern</span></span>
+          <span class="when"><span lang="zh-CN">2026.01 – 2026.05</span><span lang="en">Jan – May 2026</span></span>
+        </li>
+        <li>
+          <span class="org"><span lang="zh-CN">Family Fresh Farms（悉尼）</span><span lang="en">Family Fresh Farms, Sydney</span></span>
+          <span class="role"><span lang="zh-CN">AI 咨询实习生</span><span lang="en">AI Consulting Intern</span></span>
+          <span class="when"><span lang="zh-CN">2025.07</span><span lang="en">Jul 2025</span></span>
+        </li>
+        <li>
+          <span class="org"><span lang="zh-CN">普华永道商务咨询</span><span lang="en">PwC Business Consulting</span></span>
+          <span class="role"><span lang="zh-CN">数据实习生</span><span lang="en">Data Intern</span></span>
+          <span class="when"><span lang="zh-CN">2023.02 – 2023.04</span><span lang="en">Feb – Apr 2023</span></span>
+        </li>
+        <li>
+          <span class="org"><span lang="zh-CN">尼尔森 Nielsen</span><span lang="en">Nielsen</span></span>
+          <span class="role"><span lang="zh-CN">零售研究实习生</span><span lang="en">Retail Research Intern</span></span>
+          <span class="when"><span lang="zh-CN">2022.07 – 2022.09</span><span lang="en">Jul – Sep 2022</span></span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt contact" id="contact">
+    <div class="wrap">
+      <h2 class="section-title reveal"><span lang="zh-CN">一起聊聊。</span><span lang="en">Let’s talk.</span></h2>
+      <p class="lead reveal">
+        <span lang="zh-CN">欢迎通过邮件或 GitHub 联系我。</span>
+        <span lang="en">Reach me by email or on GitHub.</span>
+      </p>
+      <div class="actions reveal">
+        <a class="btn" href="mailto:15210055017@163.com"><span lang="zh-CN">发送邮件</span><span lang="en">Email me</span></a>
+        <a class="btn btn-ghost" href="https://github.com/memorre">GitHub</a>
+      </div>
+      <p class="contact-meta reveal">15210055017@163.com · github.com/memorre</p>
+    </div>
+  </section>
 </main>
+
+<footer class="footer">
+  <div class="wrap"><p>© 2026 叶涛 Tao Ye</p></div>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var meta = {
+      "zh-CN": {
+        title: "叶涛 Tao Ye",
+        description: "叶涛 Tao Ye — 悉尼大学计算机科学硕士（数据科学与人工智能），用 Claude Code / Codex 做 AI 应用。"
+      },
+      en: {
+        title: "Tao Ye",
+        description: "Tao Ye — Master of Computer Science (Data Science & AI) at the University of Sydney, building AI applications with Claude Code and Codex."
+      }
+    };
+    var buttons = document.querySelectorAll("[data-set-lang]");
+    var description = document.querySelector('meta[name="description"]');
+
+    function apply(lang) {
+      root.lang = lang;
+      document.title = meta[lang].title;
+      description.setAttribute("content", meta[lang].description);
+      buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)); });
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () {
+        var lang = b.dataset.setLang;
+        apply(lang);
+        try { localStorage.setItem("lang", lang); } catch (e) {}
+        // Keep a shared ?lang= link in step with the choice, so reloading doesn't switch back.
+        var url = new URL(location.href);
+        if (url.searchParams.has("lang")) {
+          url.searchParams.set("lang", lang === "en" ? "en" : "zh");
+          history.replaceState(null, "", url);
+        }
+      });
+    });
+
+    apply(root.lang === "en" ? "en" : "zh-CN");
+
+    if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: "0px 0px -8% 0px" });
+      root.classList.add("reveal-ready");
+      document.querySelectorAll(".reveal").forEach(function (el) { observer.observe(el); });
+    }
+  })();
+</script>
 </body>
 </html>
