@@ -8,18 +8,20 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <script>
-  // Pick the language before first paint: ?lang= in the URL, then the saved choice, then the browser
-  // language. Anything other than Chinese gets the default, English.
+  // Pick the language before first paint: ?lang= in the URL, then the "lang" cookie (shared with the
+  // apps on *.yetao.org), then an older saved choice, then the browser languages. Default: English.
   (function () {
     function norm(v) {
       v = String(v || "").toLowerCase();
-      return v.indexOf("zh") === 0 ? "zh-CN" : v.indexOf("en") === 0 ? "en" : null;
+      return v.indexOf("zh") === 0 ? "zh-CN" : /^(en|fr|es)/.test(v) ? v.slice(0, 2) : null;
     }
     var lang = null;
     try { lang = norm(new URLSearchParams(location.search).get("lang")); } catch (e) {}
+    if (!lang) { lang = norm((document.cookie.match(/(?:^|;\s*)lang=([^;]*)/) || [])[1]); }
     if (!lang) { try { lang = norm(localStorage.getItem("lang")); } catch (e) {} }
-    if (!lang) { lang = norm(navigator.language) || "en"; }
-    document.documentElement.lang = lang;
+    var prefs = navigator.languages || [navigator.language];
+    for (var i = 0; !lang && i < prefs.length; i++) { lang = norm(prefs[i]); }
+    document.documentElement.lang = lang || "en";
   })();
 </script>
 <style>
@@ -37,8 +39,9 @@
     --tag-bg: #f5f5f7;
     --nav-bg: rgba(255, 255, 255, .72);
     --nav-line: rgba(0, 0, 0, .08);
-    --seg-bg: rgba(118, 118, 128, .12);
-    --seg-thumb: #ffffff;
+    --hover-bg: rgba(0, 0, 0, .06);
+    --menu-bg: rgba(255, 255, 255, .94);
+    --menu-line: rgba(0, 0, 0, .1);
     --card-shadow: 0 2px 12px rgba(0, 0, 0, .04);
     --card-shadow-hover: 0 16px 40px rgba(0, 0, 0, .10);
     --gradient: linear-gradient(90deg, #0071e3 0%, #7d4cdb 50%, #e0457b 100%);
@@ -58,19 +61,23 @@
       --tag-bg: #2c2c2e;
       --nav-bg: rgba(22, 22, 23, .72);
       --nav-line: rgba(255, 255, 255, .08);
-      --seg-bg: rgba(118, 118, 128, .24);
-      --seg-thumb: #636366;
+      --hover-bg: rgba(255, 255, 255, .1);
+      --menu-bg: rgba(44, 44, 46, .96);
+      --menu-line: rgba(255, 255, 255, .12);
       --card-shadow: none;
       --card-shadow-hover: 0 16px 40px rgba(0, 0, 0, .6);
       --gradient: linear-gradient(90deg, #2997ff 0%, #bf5af2 50%, #ff375f 100%);
     }
   }
 
-  /* Bilingual content: every translated string appears twice, once with lang="zh-CN" and once with
-     lang="en". Only the one matching <html lang> is shown, so don't put a lang attribute on anything
-     that should stay visible in both languages. */
-  html[lang="en"] [lang="zh-CN"],
-  html[lang="zh-CN"] [lang="en"] { display: none !important; }
+  /* Multilingual content: every translated string appears once per language, each copy marked with
+     lang="zh-CN", "en", "fr" or "es". Only the copy matching <html lang> is shown, so don't put a lang
+     attribute on anything that should stay visible in every language (the language menu's own entries
+     are the one exception, marked with .lang-option). */
+  html[lang="zh-CN"] [lang]:not([lang="zh-CN"]):not(.lang-option),
+  html[lang="en"] [lang]:not([lang="en"]):not(.lang-option),
+  html[lang="fr"] [lang]:not([lang="fr"]):not(.lang-option),
+  html[lang="es"] [lang]:not([lang="es"]):not(.lang-option) { display: none !important; }
 
   /* Apple devices render Chinese in PingFang SC, which can't be bundled with a website. Everyone else
      gets Noto Sans SC (open source, closest to PingFang), cut down to just the characters on this page
@@ -95,7 +102,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  html[lang="en"] body { letter-spacing: -.022em; }
+  html:not([lang="zh-CN"]) body { letter-spacing: -.022em; }
   a { color: var(--link); text-decoration: none; }
   a:hover { text-decoration: underline; }
   :focus-visible { outline: 2px solid var(--button); outline-offset: 3px; border-radius: 6px; }
@@ -116,44 +123,63 @@
     backdrop-filter: saturate(180%) blur(20px);
     border-bottom: 1px solid var(--nav-line);
   }
-  .nav .wrap { height: 100%; display: flex; align-items: center; gap: 28px; }
+  .nav .wrap { height: 100%; display: flex; align-items: center; gap: 24px; }
   .brand { margin-right: auto; color: var(--text); font-size: 17px; font-weight: 600; }
   .brand:hover { text-decoration: none; }
   .nav-links { display: flex; gap: 28px; font-size: 13px; }
   .nav-links a { color: var(--text); opacity: .8; transition: opacity .2s; }
   .nav-links a:hover { opacity: 1; text-decoration: none; }
 
-  .lang-switch {
-    position: relative;
-    display: inline-grid; grid-template-columns: 1fr 1fr;
-    padding: 2px;
-    border-radius: 999px;
-    background: var(--seg-bg);
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
-  .lang-switch::before {
-    content: "";
-    position: absolute; top: 2px; bottom: 2px; left: 2px;
-    width: calc(50% - 2px);
-    border-radius: 999px;
-    background: var(--seg-thumb);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04);
-    transition: transform .35s var(--ease);
-  }
-  html[lang="en"] .lang-switch::before { transform: translateX(100%); }
-  .lang-switch button {
-    position: relative; z-index: 1;
-    min-width: 36px;
-    padding: 4px 10px;
-    border: 0; border-radius: 999px;
+
+  /* Language menu: a globe button that opens a small macOS-style menu. */
+  .lang-menu { position: relative; margin-right: -6px; }
+  .globe {
+    display: grid; place-items: center;
+    width: 32px; height: 32px;
+    padding: 0; border: 0; border-radius: 50%;
     background: none;
-    color: var(--text-2);
-    font: 500 12px/1.4 var(--font);
-    letter-spacing: 0;
+    color: var(--text);
+    opacity: .8;
     cursor: pointer;
-    transition: color .2s;
+    transition: opacity .2s, background-color .2s;
   }
-  .lang-switch button[aria-pressed="true"] { color: var(--text); }
-  .lang-switch button:focus-visible { outline-offset: 1px; border-radius: 999px; }
+  .globe:hover, .globe[aria-expanded="true"] { opacity: 1; background: var(--hover-bg); }
+  .globe svg { width: 18px; height: 18px; }
+  .globe:focus-visible { border-radius: 50%; outline-offset: 1px; }
+  .lang-list {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 176px;
+    padding: 5px;
+    border-radius: 14px;
+    background: var(--menu-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: 0 0 0 .5px var(--menu-line), 0 12px 40px rgba(0, 0, 0, .18);
+    transform-origin: top right;
+    opacity: 0; transform: scale(.96) translateY(-4px);
+    transition: opacity .16s ease, transform .2s var(--ease);
+  }
+  .lang-list[hidden] { display: none; }
+  .lang-list.open { opacity: 1; transform: none; }
+  .lang-option {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    padding: 7px 12px 7px 8px;
+    border: 0; border-radius: 8px;
+    background: none;
+    color: var(--text);
+    font: 400 14px/1.4 var(--font);
+    letter-spacing: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+  .lang-option svg { width: 14px; height: 14px; flex: none; visibility: hidden; }
+  .lang-option[aria-checked="true"] svg { visibility: visible; }
+  .lang-option:hover, .lang-option:focus-visible { background: var(--button); color: #fff; outline: none; }
 
   /* ---------- Hero ---------- */
   .hero {
@@ -271,7 +297,7 @@
   .app-icon svg { width: 30px; height: 30px; }
   .app-icon.cite { background: linear-gradient(145deg, #5ac8fa 0%, #0071e3 100%); }
   .app-icon.snip { background: linear-gradient(145deg, #ffb340 0%, #ff2d55 100%); }
-  .app-icon.timetabler { background: linear-gradient(145deg, #5ee08a 0%, #00a86b 100%); }
+  .app-icon.timetable { background: linear-gradient(145deg, #5ee08a 0%, #00a86b 100%); }
   .card-eyebrow { margin: 0; color: var(--text-2); font-size: 14px; font-weight: 600; letter-spacing: 0; }
   .card h3 { margin: 4px 0 0; font-size: 32px; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
   .card-text { margin: 14px 0 0; text-wrap: pretty; }
@@ -328,15 +354,26 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span></a>
+    <a class="brand" href="#top"><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span><span lang="fr">Tao Ye</span><span lang="es">Tao Ye</span></a>
     <nav class="nav-links" aria-label="Sections">
-      <a href="#projects"><span lang="zh-CN">项目</span><span lang="en">Projects</span></a>
-      <a href="#experience"><span lang="zh-CN">经历</span><span lang="en">Experience</span></a>
-      <a href="#contact"><span lang="zh-CN">联系</span><span lang="en">Contact</span></a>
+      <a href="#projects"><span lang="zh-CN">项目</span><span lang="en">Projects</span><span lang="fr">Projets</span><span lang="es">Proyectos</span></a>
+      <a href="#experience"><span lang="zh-CN">经历</span><span lang="en">Experience</span><span lang="fr">Expérience</span><span lang="es">Experiencia</span></a>
+      <a href="#contact"><span lang="zh-CN">联系</span><span lang="en">Contact</span><span lang="fr">Contact</span><span lang="es">Contacto</span></a>
     </nav>
-    <div class="lang-switch" role="group" aria-label="语言 / Language">
-      <button type="button" data-set-lang="zh-CN" aria-pressed="false">中</button>
-      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+    <div class="lang-menu">
+      <button type="button" class="globe" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3c2.4 2.5 3.7 5.5 3.7 9s-1.3 6.5-3.7 9c-2.4-2.5-3.7-5.5-3.7-9S9.6 5.5 12 3zM3 12h18M4.7 7.5h14.6M4.7 16.5h14.6"/>
+        </svg>
+        <span class="sr-only" lang="zh-CN">语言</span><span class="sr-only" lang="en">Language</span><span class="sr-only" lang="fr">Langue</span><span class="sr-only" lang="es">Idioma</span>
+      </button>
+      <div class="lang-list" id="lang-list" role="menu" hidden>
+        <button type="button" role="menuitemradio" class="lang-option" lang="zh-CN" data-set-lang="zh-CN" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>简体中文</button>
+        <button type="button" role="menuitemradio" class="lang-option" lang="en" data-set-lang="en" aria-checked="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>English</button>
+        <button type="button" role="menuitemradio" class="lang-option" lang="fr" data-set-lang="fr" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Français</button>
+        <button type="button" role="menuitemradio" class="lang-option" lang="es" data-set-lang="es" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Español</button>
+      </div>
     </div>
   </div>
 </header>
@@ -347,19 +384,25 @@
       <p class="eyebrow">
         <span lang="zh-CN">悉尼大学 · 计算机科学硕士</span>
         <span lang="en">The University of Sydney · Master of Computer Science</span>
+        <span lang="fr">Université de Sydney · Master en informatique</span>
+        <span lang="es">Universidad de Sídney · Máster en Informática</span>
       </p>
-      <h1><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span></h1>
+      <h1><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span><span lang="fr">Tao Ye</span><span lang="es">Tao Ye</span></h1>
       <p class="tagline">
         <span lang="zh-CN">把想法<wbr>做成能运行的产品</span>
         <span lang="en">Turning ideas into products that actually run</span>
+        <span lang="fr">Transformer des idées en produits qui fonctionnent vraiment</span>
+        <span lang="es">Convertir ideas en productos que funcionan de verdad</span>
       </p>
       <p class="lead">
         <span lang="zh-CN">数据科学与人工智能方向，2026 年 11 月毕业。日常用 Claude&nbsp;Code、Codex 做 AI 应用，也做过大模型应用的效果评估与问题归因。</span>
         <span lang="en">Data Science &amp; AI track, graduating November 2026. I build AI applications with Claude&nbsp;Code and Codex, and have evaluated LLM applications and traced their failures to root causes.</span>
+        <span lang="fr">Spécialisation en science des données et IA, diplôme prévu en novembre 2026. Je conçois des applications d’IA avec Claude&nbsp;Code et Codex, et j’ai évalué des applications de LLM en remontant leurs défaillances jusqu’à leur cause profonde.</span>
+        <span lang="es">Especialidad en Ciencia de Datos e IA, con graduación prevista para noviembre de 2026. Desarrollo aplicaciones de IA con Claude&nbsp;Code y Codex, y he evaluado aplicaciones basadas en LLM e identificado la causa raíz de sus fallos.</span>
       </p>
       <div class="actions">
-        <a class="btn" href="#projects"><span lang="zh-CN">查看项目</span><span lang="en">View projects</span></a>
-        <a class="more" href="#contact"><span lang="zh-CN">联系我</span><span lang="en">Get in touch</span></a>
+        <a class="btn" href="#projects"><span lang="zh-CN">查看项目</span><span lang="en">View projects</span><span lang="fr">Voir les projets</span><span lang="es">Ver proyectos</span></a>
+        <a class="more" href="#contact"><span lang="zh-CN">联系我</span><span lang="en">Get in touch</span><span lang="fr">Me contacter</span><span lang="es">Contáctame</span></a>
       </div>
     </div>
   </section>
@@ -369,6 +412,8 @@
       <h2 class="section-title reveal">
         <span lang="zh-CN">项目<span class="dim">亲手做的几样东西</span></span>
         <span lang="en">Projects<span class="dim">A few things I’ve built</span></span>
+        <span lang="fr">Projets<span class="dim">Quelques-unes de mes réalisations</span></span>
+        <span lang="es">Proyectos<span class="dim">Algunas cosas que he creado</span></span>
       </h2>
       <div class="cards">
         <article class="card reveal">
@@ -378,15 +423,17 @@
               <path d="M14 3v5h5M9 13h6M9 17h4"/>
             </svg>
           </div>
-          <p class="card-eyebrow"><span lang="zh-CN">文档问答助手</span><span lang="en">Document Q&amp;A assistant</span></p>
+          <p class="card-eyebrow"><span lang="zh-CN">文档问答助手</span><span lang="en">Document Q&amp;A assistant</span><span lang="fr">Questions-réponses sur vos documents</span><span lang="es">Asistente de preguntas y respuestas sobre documentos</span></p>
           <h3>Cite</h3>
           <p class="card-text">
             <span lang="zh-CN">上传 PDF，用自然语言提问，回答只依据原文，并标出引用的段落和页码。</span>
             <span lang="en">Upload a PDF and ask questions in plain language. Answers come only from the source text, with the cited passages and page numbers marked.</span>
+            <span lang="fr">Importez un PDF et posez vos questions en langage naturel. Les réponses s’appuient uniquement sur le texte source et indiquent les passages cités ainsi que leurs numéros de page.</span>
+            <span lang="es">Sube un PDF y haz preguntas en lenguaje natural. Las respuestas se basan solo en el texto original e indican los pasajes citados y sus números de página.</span>
           </p>
           <ul class="tags"><li>RAG</li><li>LangChain.js</li><li>pgvector</li><li>Next.js</li><li>Vercel</li></ul>
           <div class="card-links">
-            <a class="more" href="https://cite.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span></a>
+            <a class="more" href="https://cite.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span><span lang="fr">Essayer en ligne</span><span lang="es">Probar en línea</span></a>
             <a class="more" href="https://github.com/memorre/cite">GitHub</a>
           </div>
         </article>
@@ -398,34 +445,39 @@
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
             </svg>
           </div>
-          <p class="card-eyebrow"><span lang="zh-CN">带实时分析的短链平台</span><span lang="en">Link shortener with live analytics</span></p>
+          <p class="card-eyebrow"><span lang="zh-CN">带实时分析的短链平台</span><span lang="en">Link shortener with live analytics</span><span lang="fr">Liens courts et statistiques en direct</span><span lang="es">Enlaces cortos con analítica en tiempo real</span></p>
           <h3>Snip</h3>
           <p class="card-text">
             <span lang="zh-CN">短链接 + 点击分析：日趋势、来源渠道、设备与浏览器、地域分布，以及点击发生即刷新的实时点击流。</span>
             <span lang="en">Short links plus click analytics: daily trends, referrers, devices and browsers, locations, and a live click stream that updates the moment a click happens.</span>
+            <span lang="fr">Des liens courts et l’analyse de leurs clics&nbsp;: tendances quotidiennes, sources de trafic, appareils et navigateurs, localisation, ainsi qu’un flux de clics en direct, mis à jour à chaque clic.</span>
+            <span lang="es">Enlaces cortos con análisis de clics: tendencias diarias, fuentes de tráfico, dispositivos y navegadores, ubicaciones, y un flujo de clics en vivo que se actualiza en cuanto alguien hace clic.</span>
           </p>
           <ul class="tags"><li>Next.js</li><li>TypeScript</li><li>Postgres</li><li>Recharts</li></ul>
           <div class="card-links">
+            <a class="more" href="https://snip.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span><span lang="fr">Essayer en ligne</span><span lang="es">Probar en línea</span></a>
             <a class="more" href="https://github.com/memorre/snip">GitHub</a>
           </div>
         </article>
 
         <article class="card reveal" style="--i: 2">
-          <div class="app-icon timetabler" aria-hidden="true">
+          <div class="app-icon timetable" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/>
               <path d="M3.5 10h17M8 3v4M16 3v4"/>
             </svg>
           </div>
-          <p class="card-eyebrow"><span lang="zh-CN">实时课程表平台</span><span lang="en">Live class timetable platform</span></p>
-          <h3>Timetabler</h3>
+          <p class="card-eyebrow"><span lang="zh-CN">实时课程表平台</span><span lang="en">Live class timetable platform</span><span lang="fr">Emplois du temps en direct</span><span lang="es">Horarios de clases en tiempo real</span></p>
+          <h3>Timetable</h3>
           <p class="card-text">
             <span lang="zh-CN">学生排出自己的周课表，实时查看座位余量，并能分享只读链接；教职人员发布的公告几秒内送达，无需刷新。</span>
             <span lang="en">Students build a weekly timetable, watch seat capacity live, and share a read-only link. Staff announcements reach them within seconds, no refresh needed.</span>
+            <span lang="fr">Les étudiants composent leur emploi du temps hebdomadaire, suivent en direct les places disponibles et le partagent via un lien en lecture seule. Les annonces de l’équipe pédagogique leur parviennent en quelques secondes, sans rechargement de page.</span>
+            <span lang="es">Los estudiantes crean su horario semanal, ven en tiempo real las plazas disponibles y lo comparten con un enlace de solo lectura. Los avisos del personal les llegan en segundos, sin recargar la página.</span>
           </p>
           <ul class="tags"><li>Next.js</li><li>TypeScript</li><li>Prisma</li><li>Postgres</li><li>Vercel</li></ul>
           <div class="card-links">
-            <a class="more" href="https://timetable.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span></a>
+            <a class="more" href="https://timetable.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span><span lang="fr">Essayer en ligne</span><span lang="es">Probar en línea</span></a>
           </div>
         </article>
       </div>
@@ -437,27 +489,29 @@
       <h2 class="section-title reveal">
         <span lang="zh-CN">经历<span class="dim">我工作过的地方</span></span>
         <span lang="en">Experience<span class="dim">Where I’ve worked</span></span>
+        <span lang="fr">Expérience<span class="dim">Là où j’ai travaillé</span></span>
+        <span lang="es">Experiencia<span class="dim">Dónde he trabajado</span></span>
       </h2>
       <ul class="jobs reveal">
         <li>
-          <span class="org"><span lang="zh-CN">德勤 Deloitte</span><span lang="en">Deloitte</span></span>
-          <span class="role"><span lang="zh-CN">AI 产品经理实习生</span><span lang="en">AI Product Manager Intern</span></span>
-          <span class="when"><span lang="zh-CN">2026.01 – 2026.05</span><span lang="en">Jan – May 2026</span></span>
+          <span class="org"><span lang="zh-CN">德勤 Deloitte</span><span lang="en">Deloitte</span><span lang="fr">Deloitte</span><span lang="es">Deloitte</span></span>
+          <span class="role"><span lang="zh-CN">AI 产品经理实习生</span><span lang="en">AI Product Manager Intern</span><span lang="fr">Stagiaire chef de produit IA</span><span lang="es">Prácticas en gestión de producto de IA</span></span>
+          <span class="when"><span lang="zh-CN">2026.01 – 2026.05</span><span lang="en">Jan – May 2026</span><span lang="fr">janvier – mai 2026</span><span lang="es">enero – mayo de 2026</span></span>
         </li>
         <li>
-          <span class="org"><span lang="zh-CN">Family Fresh Farms（悉尼）</span><span lang="en">Family Fresh Farms, Sydney</span></span>
-          <span class="role"><span lang="zh-CN">AI 咨询实习生</span><span lang="en">AI Consulting Intern</span></span>
-          <span class="when"><span lang="zh-CN">2025.07</span><span lang="en">Jul 2025</span></span>
+          <span class="org"><span lang="zh-CN">Family Fresh Farms（悉尼）</span><span lang="en">Family Fresh Farms, Sydney</span><span lang="fr">Family Fresh Farms, Sydney</span><span lang="es">Family Fresh Farms, Sídney</span></span>
+          <span class="role"><span lang="zh-CN">AI 咨询实习生</span><span lang="en">AI Consulting Intern</span><span lang="fr">Stagiaire consultant IA</span><span lang="es">Prácticas en consultoría de IA</span></span>
+          <span class="when"><span lang="zh-CN">2025.07</span><span lang="en">Jul 2025</span><span lang="fr">juillet 2025</span><span lang="es">julio de 2025</span></span>
         </li>
         <li>
-          <span class="org"><span lang="zh-CN">普华永道商务咨询</span><span lang="en">PwC Business Consulting</span></span>
-          <span class="role"><span lang="zh-CN">数据实习生</span><span lang="en">Data Intern</span></span>
-          <span class="when"><span lang="zh-CN">2023.02 – 2023.04</span><span lang="en">Feb – Apr 2023</span></span>
+          <span class="org"><span lang="zh-CN">普华永道商务咨询</span><span lang="en">PwC Business Consulting</span><span lang="fr">PwC Business Consulting</span><span lang="es">PwC Business Consulting</span></span>
+          <span class="role"><span lang="zh-CN">数据实习生</span><span lang="en">Data Intern</span><span lang="fr">Stagiaire data</span><span lang="es">Prácticas en el área de datos</span></span>
+          <span class="when"><span lang="zh-CN">2023.02 – 2023.04</span><span lang="en">Feb – Apr 2023</span><span lang="fr">février – avril 2023</span><span lang="es">febrero – abril de 2023</span></span>
         </li>
         <li>
-          <span class="org"><span lang="zh-CN">尼尔森 Nielsen</span><span lang="en">Nielsen</span></span>
-          <span class="role"><span lang="zh-CN">零售研究实习生</span><span lang="en">Retail Research Intern</span></span>
-          <span class="when"><span lang="zh-CN">2022.07 – 2022.09</span><span lang="en">Jul – Sep 2022</span></span>
+          <span class="org"><span lang="zh-CN">尼尔森 Nielsen</span><span lang="en">Nielsen</span><span lang="fr">Nielsen</span><span lang="es">Nielsen</span></span>
+          <span class="role"><span lang="zh-CN">零售研究实习生</span><span lang="en">Retail Research Intern</span><span lang="fr">Stagiaire études retail</span><span lang="es">Prácticas en estudios de retail</span></span>
+          <span class="when"><span lang="zh-CN">2022.07 – 2022.09</span><span lang="en">Jul – Sep 2022</span><span lang="fr">juillet – septembre 2022</span><span lang="es">julio – septiembre de 2022</span></span>
         </li>
       </ul>
     </div>
@@ -465,13 +519,15 @@
 
   <section class="section alt contact" id="contact">
     <div class="wrap">
-      <h2 class="section-title reveal"><span lang="zh-CN">一起聊聊</span><span lang="en">Let’s talk</span></h2>
+      <h2 class="section-title reveal"><span lang="zh-CN">一起聊聊</span><span lang="en">Let’s talk</span><span lang="fr">Discutons</span><span lang="es">Hablemos</span></h2>
       <p class="lead reveal">
         <span lang="zh-CN">欢迎通过邮件或 GitHub 联系我。</span>
         <span lang="en">Reach me by email or on GitHub.</span>
+        <span lang="fr">Écrivez-moi par e-mail ou sur GitHub.</span>
+        <span lang="es">Escríbeme por correo electrónico o búscame en GitHub.</span>
       </p>
       <div class="actions reveal">
-        <a class="btn" href="mailto:15210055017@163.com"><span lang="zh-CN">发送邮件</span><span lang="en">Email me</span></a>
+        <a class="btn" href="mailto:15210055017@163.com"><span lang="zh-CN">发送邮件</span><span lang="en">Email me</span><span lang="fr">Envoyer un e-mail</span><span lang="es">Enviar un correo</span></a>
         <a class="btn btn-ghost" href="https://github.com/memorre">GitHub</a>
       </div>
       <p class="contact-meta reveal">15210055017@163.com · github.com/memorre</p>
@@ -494,33 +550,97 @@
       en: {
         title: "Tao Ye",
         description: "Tao Ye — Master of Computer Science (Data Science & AI) at the University of Sydney, building AI applications with Claude Code and Codex."
+      },
+      fr: {
+        title: "Tao Ye",
+        description: "Tao Ye — Master en informatique (science des données et IA) à l’Université de Sydney. Je conçois des applications d’IA avec Claude Code et Codex."
+      },
+      es: {
+        title: "Tao Ye",
+        description: "Tao Ye — Máster en Informática (Ciencia de Datos e IA) en la Universidad de Sídney. Desarrollo aplicaciones de IA con Claude Code y Codex."
       }
     };
-    var buttons = document.querySelectorAll("[data-set-lang]");
     var description = document.querySelector('meta[name="description"]');
+    var menu = document.querySelector(".lang-menu");
+    var trigger = menu.querySelector(".globe");
+    var list = menu.querySelector(".lang-list");
+    var options = Array.prototype.slice.call(list.querySelectorAll("[data-set-lang]"));
 
     function apply(lang) {
       root.lang = lang;
       document.title = meta[lang].title;
       description.setAttribute("content", meta[lang].description);
-      buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)); });
+      options.forEach(function (o) { o.setAttribute("aria-checked", String(o.dataset.setLang === lang)); });
     }
 
-    buttons.forEach(function (b) {
-      b.addEventListener("click", function () {
-        var lang = b.dataset.setLang;
-        apply(lang);
-        try { localStorage.setItem("lang", lang); } catch (e) {}
-        // Keep a shared ?lang= link in step with the choice, so reloading doesn't switch back.
-        var url = new URL(location.href);
-        if (url.searchParams.has("lang")) {
-          url.searchParams.set("lang", lang === "en" ? "en" : "zh");
-          history.replaceState(null, "", url);
-        }
+    // Remember the choice in a cookie on yetao.org itself, so Cite, Snip and the other apps on
+    // *.yetao.org open in the same language.
+    function save(lang) {
+      var host = location.hostname;
+      var shared = host === "yetao.org" || /\.yetao\.org$/.test(host);
+      document.cookie = "lang=" + lang + "; Path=/; Max-Age=31536000; SameSite=Lax" +
+        (shared ? "; Domain=yetao.org" : "") + (location.protocol === "https:" ? "; Secure" : "");
+      try { localStorage.setItem("lang", lang); } catch (e) {}
+      // Keep a shared ?lang= link in step with the choice, so reloading doesn't switch back.
+      var url = new URL(location.href);
+      if (url.searchParams.has("lang")) {
+        url.searchParams.set("lang", lang === "zh-CN" ? "zh" : lang);
+        history.replaceState(null, "", url);
+      }
+    }
+
+    function isOpen() { return !list.hidden; }
+    function focusOption(i) { options[(i + options.length) % options.length].focus(); }
+    function checkedIndex() {
+      for (var i = 0; i < options.length; i++) {
+        if (options[i].getAttribute("aria-checked") === "true") return i;
+      }
+      return 0;
+    }
+    function open(focusIndex) {
+      list.hidden = false;
+      trigger.setAttribute("aria-expanded", "true");
+      requestAnimationFrame(function () { list.classList.add("open"); });
+      document.addEventListener("pointerdown", onOutside, true);
+      if (focusIndex !== undefined) focusOption(focusIndex);
+    }
+    function close(returnFocus) {
+      list.classList.remove("open");
+      list.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      document.removeEventListener("pointerdown", onOutside, true);
+      if (returnFocus) trigger.focus();
+    }
+    function onOutside(e) { if (!menu.contains(e.target)) close(false); }
+
+    trigger.addEventListener("click", function (e) {
+      if (isOpen()) close(false);
+      else open(e.detail === 0 ? checkedIndex() : undefined); // keyboard activation moves focus into the menu
+    });
+    trigger.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        open(e.key === "ArrowDown" ? checkedIndex() : options.length - 1);
+      }
+    });
+    list.addEventListener("keydown", function (e) {
+      var i = options.indexOf(document.activeElement);
+      if (e.key === "ArrowDown") { e.preventDefault(); focusOption(i + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); focusOption(i - 1); }
+      else if (e.key === "Home") { e.preventDefault(); focusOption(0); }
+      else if (e.key === "End") { e.preventDefault(); focusOption(options.length - 1); }
+      else if (e.key === "Escape") { e.preventDefault(); close(true); }
+      else if (e.key === "Tab") { close(false); }
+    });
+    options.forEach(function (o) {
+      o.addEventListener("click", function () {
+        apply(o.dataset.setLang);
+        save(o.dataset.setLang);
+        close(true);
       });
     });
 
-    apply(root.lang === "en" ? "en" : "zh-CN");
+    apply(meta[root.lang] ? root.lang : "en");
 
     if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       var observer = new IntersectionObserver(function (entries) {
