@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>叶涛 Tao Ye</title>
-<meta name="description" content="叶涛 Tao Ye — 悉尼大学计算机科学硕士（数据科学与人工智能），用 Claude Code / Codex 做 AI 应用。">
+<title>Tao Ye</title>
+<meta name="description" content="Tao Ye — Master of Computer Science (Data Science &amp; AI) at the University of Sydney, building AI applications with Claude Code and Codex.">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <script>
-  // Pick the language before first paint: ?lang= in the URL, then the saved choice, then the browser language.
+  // Pick the language before first paint: ?lang= in the URL, then the saved choice, then the browser
+  // language. Anything other than Chinese gets the default, English.
   (function () {
     function norm(v) {
       v = String(v || "").toLowerCase();
@@ -41,8 +42,8 @@
     --card-shadow: 0 2px 12px rgba(0, 0, 0, .04);
     --card-shadow-hover: 0 16px 40px rgba(0, 0, 0, .10);
     --gradient: linear-gradient(90deg, #0071e3 0%, #7d4cdb 50%, #e0457b 100%);
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI",
-            "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC",
+            "Noto Sans SC Subset", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
     --ease: cubic-bezier(.2, .7, .2, 1);
   }
   @media (prefers-color-scheme: dark) {
@@ -70,6 +71,18 @@
      that should stay visible in both languages. */
   html[lang="en"] [lang="zh-CN"],
   html[lang="zh-CN"] [lang="en"] { display: none !important; }
+
+  /* Apple devices render Chinese in PingFang SC, which can't be bundled with a website. Everyone else
+     gets Noto Sans SC (open source, closest to PingFang), cut down to just the characters on this page
+     so it stays tiny; Apple devices never download it. Characters added later that aren't in the subset
+     fall back to the system font; after editing Chinese text, rebuild it with fonts/build-subset.py. */
+  @font-face {
+    font-family: "Noto Sans SC Subset";
+    src: url("fonts/noto-sans-sc-subset.woff2") format("woff2");
+    font-weight: 400 600;
+    font-display: swap;
+    unicode-range: U+2E80-2FDF, U+3000-303F, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+  }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; scroll-padding-top: 48px; -webkit-text-size-adjust: 100%; }
@@ -163,8 +176,8 @@
     letter-spacing: -.005em;
     text-wrap: balance;
   }
-  /* Chinese headlines only break at punctuation, never in the middle of a phrase. */
-  .tagline, .section-title { word-break: keep-all; overflow-wrap: break-word; }
+  /* Chinese text only wraps at punctuation, spaces or a <wbr>, never in the middle of a word. */
+  .tagline, .section-title, .lead { word-break: keep-all; overflow-wrap: break-word; }
   .tagline span {
     background: var(--gradient);
     -webkit-background-clip: text; background-clip: text;
@@ -224,7 +237,7 @@
     letter-spacing: -.005em;
     text-wrap: balance;
   }
-  .section-title .dim { color: var(--text-2); }
+  .section-title .dim { display: block; color: var(--text-2); }
 
   /* Projects */
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; }
@@ -313,8 +326,8 @@
       <a href="#contact"><span lang="zh-CN">联系</span><span lang="en">Contact</span></a>
     </nav>
     <div class="lang-switch" role="group" aria-label="语言 / Language">
-      <button type="button" data-set-lang="zh-CN" aria-pressed="true">中</button>
-      <button type="button" data-set-lang="en" aria-pressed="false">EN</button>
+      <button type="button" data-set-lang="zh-CN" aria-pressed="false">中</button>
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
     </div>
   </div>
 </header>
@@ -328,8 +341,8 @@
       </p>
       <h1><span lang="zh-CN">叶涛</span><span lang="en">Tao Ye</span></h1>
       <p class="tagline">
-        <span lang="zh-CN">把想法，做成能运行的产品。</span>
-        <span lang="en">Turning ideas into products that actually run.</span>
+        <span lang="zh-CN">把想法<wbr>做成能运行的产品</span>
+        <span lang="en">Turning ideas into products that actually run</span>
       </p>
       <p class="lead">
         <span lang="zh-CN">数据科学与人工智能方向，2026 年 11 月毕业。日常用 Claude&nbsp;Code、Codex 做 AI 应用，也做过大模型应用的效果评估与问题归因。</span>
@@ -345,8 +358,8 @@
   <section class="section alt" id="projects">
     <div class="wrap">
       <h2 class="section-title reveal">
-        <span lang="zh-CN">项目。<span class="dim">亲手做的几样东西。</span></span>
-        <span lang="en">Projects. <span class="dim">A few things I’ve built.</span></span>
+        <span lang="zh-CN">项目<span class="dim">亲手做的几样东西</span></span>
+        <span lang="en">Projects<span class="dim">A few things I’ve built</span></span>
       </h2>
       <div class="cards">
         <article class="card reveal">
@@ -394,8 +407,8 @@
   <section class="section" id="experience">
     <div class="wrap">
       <h2 class="section-title reveal">
-        <span lang="zh-CN">经历。<span class="dim">我工作过的地方。</span></span>
-        <span lang="en">Experience. <span class="dim">Where I’ve worked.</span></span>
+        <span lang="zh-CN">经历<span class="dim">我工作过的地方</span></span>
+        <span lang="en">Experience<span class="dim">Where I’ve worked</span></span>
       </h2>
       <ul class="jobs reveal">
         <li>
@@ -424,7 +437,7 @@
 
   <section class="section alt contact" id="contact">
     <div class="wrap">
-      <h2 class="section-title reveal"><span lang="zh-CN">一起聊聊。</span><span lang="en">Let’s talk.</span></h2>
+      <h2 class="section-title reveal"><span lang="zh-CN">一起聊聊</span><span lang="en">Let’s talk</span></h2>
       <p class="lead reveal">
         <span lang="zh-CN">欢迎通过邮件或 GitHub 联系我。</span>
         <span lang="en">Reach me by email or on GitHub.</span>
