@@ -240,10 +240,18 @@
   .section-title .dim { display: block; color: var(--text-2); }
 
   /* Projects */
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; }
+  .cards { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 720px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .cards > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1000px) {
+    .cards { grid-template-columns: repeat(3, 1fr); }
+    .cards > :last-child:nth-child(odd) { grid-column: auto; }
+  }
   .card {
     display: flex; flex-direction: column;
-    padding: clamp(28px, 4vw, 40px);
+    padding: clamp(28px, 3.2vw, 34px);
     border-radius: 28px;
     background: var(--card);
     box-shadow: var(--card-shadow);
@@ -263,8 +271,9 @@
   .app-icon svg { width: 30px; height: 30px; }
   .app-icon.cite { background: linear-gradient(145deg, #5ac8fa 0%, #0071e3 100%); }
   .app-icon.snip { background: linear-gradient(145deg, #ffb340 0%, #ff2d55 100%); }
+  .app-icon.timetabler { background: linear-gradient(145deg, #5ee08a 0%, #00a86b 100%); }
   .card-eyebrow { margin: 0; color: var(--text-2); font-size: 14px; font-weight: 600; letter-spacing: 0; }
-  .card h3 { margin: 4px 0 0; font-size: clamp(32px, 4vw, 40px); font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+  .card h3 { margin: 4px 0 0; font-size: 32px; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
   .card-text { margin: 14px 0 0; text-wrap: pretty; }
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; }
   .tags li {
@@ -398,6 +407,25 @@
           <ul class="tags"><li>Next.js</li><li>TypeScript</li><li>Postgres</li><li>Recharts</li></ul>
           <div class="card-links">
             <a class="more" href="https://github.com/memorre/snip">GitHub</a>
+          </div>
+        </article>
+
+        <article class="card reveal" style="--i: 2">
+          <div class="app-icon timetabler" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/>
+              <path d="M3.5 10h17M8 3v4M16 3v4"/>
+            </svg>
+          </div>
+          <p class="card-eyebrow"><span lang="zh-CN">实时课程表平台</span><span lang="en">Live class timetable platform</span></p>
+          <h3>Timetabler</h3>
+          <p class="card-text">
+            <span lang="zh-CN">学生排出自己的周课表，实时查看座位余量，并能分享只读链接；教职人员发布的公告几秒内送达，无需刷新。</span>
+            <span lang="en">Students build a weekly timetable, watch seat capacity live, and share a read-only link. Staff announcements reach them within seconds, no refresh needed.</span>
+          </p>
+          <ul class="tags"><li>Next.js</li><li>TypeScript</li><li>Prisma</li><li>Postgres</li><li>Vercel</li></ul>
+          <div class="card-links">
+            <a class="more" href="https://timetable.yetao.org"><span lang="zh-CN">在线试用</span><span lang="en">Try it live</span></a>
           </div>
         </article>
       </div>
