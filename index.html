@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <script>
   // Pick the language before first paint: ?lang= in the URL, then the "lang" cookie (shared with the
-  // apps on *.yetao.org), then an older saved choice, then the browser languages. Default: English.
+  // apps on *.yetao.org), then an older saved choice. Otherwise English, whatever the browser language.
   (function () {
     function norm(v) {
       v = String(v || "").toLowerCase();
@@ -19,8 +19,6 @@
     try { lang = norm(new URLSearchParams(location.search).get("lang")); } catch (e) {}
     if (!lang) { lang = norm((document.cookie.match(/(?:^|;\s*)lang=([^;]*)/) || [])[1]); }
     if (!lang) { try { lang = norm(localStorage.getItem("lang")); } catch (e) {} }
-    var prefs = navigator.languages || [navigator.language];
-    for (var i = 0; !lang && i < prefs.length; i++) { lang = norm(prefs[i]); }
     document.documentElement.lang = lang || "en";
   })();
 </script>
@@ -369,10 +367,10 @@
         <span class="sr-only" lang="zh-CN">语言</span><span class="sr-only" lang="en">Language</span><span class="sr-only" lang="fr">Langue</span><span class="sr-only" lang="es">Idioma</span>
       </button>
       <div class="lang-list" id="lang-list" role="menu" hidden>
-        <button type="button" role="menuitemradio" class="lang-option" lang="zh-CN" data-set-lang="zh-CN" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>简体中文</button>
         <button type="button" role="menuitemradio" class="lang-option" lang="en" data-set-lang="en" aria-checked="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>English</button>
         <button type="button" role="menuitemradio" class="lang-option" lang="fr" data-set-lang="fr" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Français</button>
         <button type="button" role="menuitemradio" class="lang-option" lang="es" data-set-lang="es" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Español</button>
+        <button type="button" role="menuitemradio" class="lang-option" lang="zh-CN" data-set-lang="zh-CN" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>中文</button>
       </div>
     </div>
   </div>
